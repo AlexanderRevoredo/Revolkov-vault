@@ -13,93 +13,155 @@
   <img src="https://img.shields.io/badge/JavaFX-21.0.2-2C54A3?logo=java&logoColor=white" alt="JavaFX 21.0.2">
   <img src="https://img.shields.io/badge/Maven-Build-C71A36?logo=apachemaven&logoColor=white" alt="Maven">
   <img src="https://img.shields.io/badge/Status-Em%20desenvolvimento-3AA8FF" alt="Status do projeto">
+  <img src="https://img.shields.io/badge/Projeto-Portf%C3%B3lio-22C55E" alt="Projeto de portfólio">
 </p>
+
+---
 
 ## Sobre o projeto
 
-O **Revolkov Vault** é uma aplicação desktop criada para gerar, organizar e consultar credenciais armazenadas localmente.
+O **Revolkov Vault** é uma aplicação desktop para geração, organização e consulta de credenciais armazenadas localmente.
 
-O projeto nasceu como um gerador de senhas e evoluiu para um pequeno cofre de credenciais com identidade visual própria, busca, edição, avaliação de força e proteção da visualização por senha mestre.
+O projeto começou como um gerador de senhas e evoluiu para um pequeno cofre de credenciais com identidade visual própria, persistência local, pesquisa, edição, avaliação de força e proteção da visualização por senha mestre.
 
-Este é um projeto de portfólio desenvolvido com foco em:
+O objetivo principal é aplicar e demonstrar conhecimentos de:
 
 - programação orientada a objetos;
 - separação de responsabilidades;
-- construção de interfaces com JavaFX;
-- persistência local de dados;
+- desenvolvimento de interfaces com JavaFX;
+- persistência de dados em arquivos;
 - validação e feedback ao usuário;
-- aplicação de conceitos iniciais de segurança.
+- geração aleatória criptograficamente adequada;
+- hash de senhas com salt;
+- construção e evolução de um produto de software.
+
+> [!IMPORTANT]
+> Esta versão foi desenvolvida para fins educacionais e de portfólio.
+>
+> As credenciais ainda são armazenadas em texto puro no arquivo local. Portanto, o aplicativo não deve ser utilizado para guardar senhas reais ou informações sensíveis.
+
+---
 
 ## Funcionalidades
 
-- Geração de senhas com `SecureRandom`.
-- Escolha entre letras maiúsculas, minúsculas, números e símbolos.
+### Geração de senhas
+
+- Geração com `SecureRandom`.
 - Tamanho configurável entre 4 e 64 caracteres.
+- Inclusão opcional de:
+  - letras maiúsculas;
+  - letras minúsculas;
+  - números;
+  - símbolos.
 - Indicador visual de força da senha.
+- Opção para mostrar ou ocultar a senha digitada.
+- Cópia da senha para a área de transferência.
+
+### Gerenciamento de credenciais
+
 - Cadastro de serviço, conta e senha.
-- Edição e exclusão de credenciais.
-- Confirmação antes de operações destrutivas.
-- Busca de credenciais pelo nome do serviço.
+- Substituição de credenciais com o mesmo serviço e conta.
+- Edição de credenciais cadastradas.
+- Exclusão com confirmação.
+- Pesquisa pelo nome do serviço.
 - Senhas mascaradas na tabela.
-- Exibição de senha condicionada à validação da senha mestre.
-- Recuperação das preferências de geração utilizadas anteriormente para cada serviço.
-- Tema escuro responsivo com identidade visual própria.
-- Ícones adaptados para diferentes tamanhos de janela e sistema operacional.
+- Revelação condicionada à confirmação da senha mestre.
+- Recuperação das preferências de geração usadas anteriormente para um serviço.
+- Feedback visual para operações de sucesso e erro.
+
+### Interface
+
+- Tema escuro com identidade visual própria.
+- Logo e ícones adaptados para diferentes tamanhos.
+- Layout adaptável ao redimensionamento da janela.
+- Botões de edição, visualização e exclusão desabilitados quando nenhuma credencial está selecionada.
+- Diálogos e alertas personalizados com o mesmo tema da aplicação.
+
+---
 
 ## Tecnologias utilizadas
 
-- **Java 21**
-- **JavaFX 21.0.2**
-- **Maven**
-- **JavaFX CSS**
-- **PBKDF2WithHmacSHA256** para derivação do hash da senha mestre
-- **SecureRandom** para geração de senhas e salt
+| Tecnologia | Utilização |
+|---|---|
+| Java 21 | Linguagem principal |
+| JavaFX 21.0.2 | Interface gráfica |
+| Maven | Gerenciamento de dependências e execução |
+| JavaFX CSS | Estilização da aplicação |
+| SecureRandom | Geração de senhas e salts |
+| PBKDF2WithHmacSHA256 | Derivação do hash da senha mestre |
+| Java NIO | Leitura e gravação dos arquivos locais |
+
+---
 
 ## Estrutura do projeto
 
 ```text
-src/main/java/org/example/
-├── Launcher.java
-├── MainApp.java
-├── model/
-│   └── PasswordEntry.java
-└── service/
-    ├── MasterPasswordService.java
-    ├── PasswordGenerator.java
-    ├── PasswordStorage.java
-    └── PasswordStrengthEvaluator.java
-
-src/main/resources/
-├── fonts/
-├── icons/
-└── style.css
+src/
+└── main/
+    ├── java/
+    │   └── org/
+    │       └── example/
+    │           ├── Launcher.java
+    │           ├── MainApp.java
+    │           ├── model/
+    │           │   └── PasswordEntry.java
+    │           └── service/
+    │               ├── MasterPasswordService.java
+    │               ├── PasswordGenerator.java
+    │               ├── PasswordStorage.java
+    │               └── PasswordStrengthEvaluator.java
+    └── resources/
+        ├── fonts/
+        ├── icons/
+        └── style.css
 ```
 
-### Responsabilidades principais
+### Responsabilidades das classes
 
-- `MainApp`: monta a interface e coordena as ações do usuário.
-- `PasswordEntry`: representa uma credencial salva.
-- `PasswordGenerator`: gera senhas de acordo com as opções selecionadas.
-- `PasswordStrengthEvaluator`: classifica a força da senha por tamanho e variedade de caracteres.
-- `PasswordStorage`: realiza a leitura e a escrita das credenciais no armazenamento local.
-- `MasterPasswordService`: cadastra e valida a senha mestre por meio de hash com salt.
+#### `MainApp`
+
+Responsável pela montagem da interface e pela coordenação das ações realizadas pelo usuário.
+
+#### `PasswordEntry`
+
+Representa uma credencial armazenada, incluindo serviço, conta, senha e preferências de geração.
+
+#### `PasswordGenerator`
+
+Gera senhas de acordo com o tamanho e os grupos de caracteres selecionados.
+
+#### `PasswordStrengthEvaluator`
+
+Avalia a força da senha utilizando uma heurística baseada no tamanho e na variedade de caracteres.
+
+#### `PasswordStorage`
+
+Realiza a leitura e a gravação das credenciais no armazenamento local.
+
+#### `MasterPasswordService`
+
+Cadastra e valida a senha mestre utilizando PBKDF2 com salt aleatório.
+
+---
 
 ## Como executar
 
 ### Pré-requisitos
 
-- JDK 21 instalado.
-- Maven instalado e disponível no terminal.
-- Git instalado para clonar o repositório.
+Certifique-se de possuir:
 
-### Clonando o projeto
+- JDK 21;
+- Maven;
+- Git.
+
+### Clonar o repositório
 
 ```bash
 git clone https://github.com/AlexanderRevoredo/Revolkov-vault.git
 cd Revolkov-vault
 ```
 
-### Executando com Maven
+### Executar com Maven
 
 ```bash
 mvn clean javafx:run
@@ -107,11 +169,13 @@ mvn clean javafx:run
 
 Na primeira execução, o aplicativo solicitará a criação de uma senha mestre.
 
-Ela será exigida sempre que o usuário tentar revelar uma credencial salva.
+Essa senha será exigida sempre que o usuário tentar revelar uma credencial armazenada.
+
+---
 
 ## Armazenamento local
 
-Os dados são armazenados fora da pasta do projeto, no diretório pessoal do usuário:
+Os arquivos são criados fora da pasta do projeto, dentro do diretório pessoal do usuário:
 
 ```text
 ~/password-manager/
@@ -119,63 +183,114 @@ Os dados são armazenados fora da pasta do projeto, no diretório pessoal do usu
 └── passwords.txt
 ```
 
-No Windows, o caminho normalmente corresponde a:
+No Windows, o caminho normalmente será:
 
 ```text
 C:\Users\<usuario>\password-manager\
 ```
 
-- `master.key` armazena o salt e o hash derivado da senha mestre.
-- `passwords.txt` armazena as credenciais e as preferências de geração.
+### `master.key`
 
-## Segurança
+Armazena:
 
-A senha mestre **não é salva em texto puro**.
+- salt aleatório;
+- hash derivado da senha mestre.
 
-O projeto utiliza:
+A senha mestre original não é armazenada.
 
-- PBKDF2 com HMAC-SHA-256;
+### `passwords.txt`
+
+Armazena:
+
+- serviço;
+- conta;
+- senha;
+- preferências de geração;
+- tamanho configurado.
+
+---
+
+## Segurança implementada
+
+A senha mestre não é salva em texto puro.
+
+A implementação utiliza:
+
+- `PBKDF2WithHmacSHA256`;
 - salt aleatório de 16 bytes;
 - 65.536 iterações;
 - chave derivada de 256 bits;
-- comparação de hashes com `MessageDigest.isEqual`.
+- comparação com `MessageDigest.isEqual`;
+- `SecureRandom` para geração de senhas e salts.
 
-A geração de senhas utiliza `SecureRandom`, adequado para valores que não devem ser facilmente previsíveis.
+### Limitação atual
 
 > [!WARNING]
-> Nesta versão, as credenciais ainda são gravadas em texto puro no arquivo `passwords.txt`.
+> A senha mestre protege a visualização das credenciais dentro da interface, mas ainda não protege diretamente o arquivo `passwords.txt`.
 >
-> A senha mestre protege a visualização dentro da interface, mas não criptografa o arquivo armazenado no disco.
+> As credenciais são armazenadas em texto puro no disco e podem ser lidas por alguém que tenha acesso ao arquivo.
 >
-> Por isso, a versão atual deve ser considerada educacional e de portfólio, não um gerenciador de senhas pronto para uso com credenciais reais.
+> A implementação de criptografia autenticada do cofre está planejada para uma próxima versão.
+
+---
 
 ## Roadmap
 
-- [ ] Criptografar o cofre local com AES-GCM.
+- [ ] Criptografar o arquivo de credenciais com AES-GCM.
 - [ ] Derivar a chave de criptografia a partir da senha mestre.
 - [ ] Limpar automaticamente a senha da área de transferência.
-- [ ] Adicionar testes unitários para geração, força e persistência.
-- [ ] Melhorar o tratamento de arquivos corrompidos.
+- [ ] Adicionar testes unitários para geração e avaliação de força.
+- [ ] Adicionar testes para persistência e validação da senha mestre.
+- [ ] Melhorar o tratamento de arquivos ausentes ou corrompidos.
 - [ ] Criar instalador para Windows.
 - [ ] Publicar versões executáveis na seção Releases.
-- [ ] Adicionar demonstração em GIF ou vídeo ao README.
+- [ ] Adicionar demonstração em GIF ou vídeo.
+- [ ] Adicionar captura atualizada da interface ao README.
+
+---
 
 ## Aprendizados demonstrados
 
-O projeto aplica conceitos como:
+Durante o desenvolvimento foram aplicados conceitos como:
 
-- organização em camadas simples;
-- encapsulamento da lógica em serviços;
-- coleções observáveis e filtradas do JavaFX;
-- bindings para controle automático do estado dos botões;
-- validação de formulários e diálogos modais;
-- personalização visual com CSS;
+- encapsulamento;
+- organização em serviços;
+- separação entre interface, modelo e persistência;
+- coleções observáveis do JavaFX;
+- filtragem com `FilteredList`;
+- bindings para controle automático de componentes;
+- validação de formulários;
+- diálogos modais;
+- personalização de interface com CSS;
 - persistência em arquivos;
-- hashing de senha com salt;
-- geração aleatória criptograficamente mais segura.
+- hash de senha com salt;
+- geração aleatória com `SecureRandom`;
+- evolução incremental baseada em testes e feedback.
+
+---
+
+## Próxima evolução técnica
+
+O principal objetivo da próxima versão é transformar a senha mestre em uma proteção real para o conteúdo do cofre.
+
+A estratégia planejada é:
+
+1. derivar uma chave a partir da senha mestre;
+2. criptografar as credenciais com AES-GCM;
+3. armazenar apenas o conteúdo criptografado;
+4. autenticar o arquivo para detectar alterações ou corrupção;
+5. reduzir o tempo de exposição das senhas na memória e na área de transferência.
+
+---
 
 ## Autor
 
 Desenvolvido por **Alexander Revoredo**.
 
-GitHub: [@AlexanderRevoredo](https://github.com/AlexanderRevoredo)
+- GitHub: [@AlexanderRevoredo](https://github.com/AlexanderRevoredo)
+
+---
+
+<p align="center">
+  Desenvolvido como projeto de portfólio para demonstrar evolução em Java, JavaFX e segurança de aplicações.
+</p>
