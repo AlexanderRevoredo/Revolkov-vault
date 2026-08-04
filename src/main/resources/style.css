@@ -1,0 +1,251 @@
+/*
+ * Tema visual do REVOLKOV VAULT (paleta escura + azul, baseada no logo).
+ *
+ * Como funciona o CSS do JavaFX: é parecido com CSS de site, mas as
+ * "classes" aqui (.button, .label, .text-field...) já vêm PRONTAS de
+ * fábrica em cada tipo de controle do JavaFX — a gente só está
+ * SOBRESCREVENDO a aparência padrão delas. Classes customizadas, como
+ * .app-title ou .button-danger, são as que criamos e ligamos manualmente
+ * a um componente no código Java via `.getStyleClass().add("nome")`.
+ *
+ * Esse arquivo é carregado uma única vez em MainApp (scene.getStylesheets()
+ * e applyTheme()) e vale pra janela inteira, incluindo os diálogos.
+ */
+
+/* Fundo geral da janela e fonte padrão de todo o app. */
+.root {
+    -fx-background-color: #0b0f1a;
+    -fx-font-family: "Segoe UI", sans-serif;
+}
+
+.label {
+    -fx-text-fill: #d7dce3;
+}
+
+/* Texto de erro pequeno usado dentro dos diálogos (senha mestre, etc.). */
+.error-label {
+    -fx-text-fill: #ff6b6b;
+    -fx-font-size: 11px;
+}
+
+/* --- Cabeçalho (logo + "REVOLKOV VAULT" + subtítulo) --- */
+/* O tamanho da fonte do título é definido dinamicamente pelo Java
+   (MainApp.updateHeaderFontSize), então aqui só cuidamos de cor/peso. */
+.app-title {
+    -fx-text-fill: #e8ecf1;
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+}
+
+.app-subtitle {
+    -fx-text-fill: #3aa8ff;
+    -fx-font-size: 12px;
+}
+
+/* --- Campos de texto (Serviço, Conta, Senha, busca, senha mestre) --- */
+.text-field, .password-field {
+    -fx-background-color: #131a2a;
+    -fx-text-fill: #e8ecf1;
+    -fx-prompt-text-fill: #6b7688; /* cor do texto de dica (placeholder) */
+    -fx-border-color: #24304a;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-highlight-fill: #3aa8ff; /* cor de fundo ao selecionar texto */
+}
+
+.text-field:focused, .password-field:focused {
+    -fx-border-color: #3aa8ff;
+}
+
+/* --- Spinner (campo de "Tamanho:" da senha, com setinhas) --- */
+/* Um Spinner é composto por várias partes internas (texto + duas setas),
+   então precisamos estilizar cada pedacinho separadamente. */
+.spinner {
+    -fx-background-color: transparent;
+}
+
+.spinner .text-field {
+    -fx-background-color: #131a2a;
+    -fx-text-fill: #e8ecf1;
+    -fx-border-color: #24304a;
+}
+
+.spinner .increment-arrow-button,
+.spinner .decrement-arrow-button {
+    -fx-background-color: #1a2233;
+    -fx-border-color: #24304a;
+}
+
+.spinner .increment-arrow-button:hover,
+.spinner .decrement-arrow-button:hover {
+    -fx-background-color: #24304a;
+}
+
+.spinner .increment-arrow,
+.spinner .decrement-arrow {
+    -fx-background-color: #3aa8ff;
+}
+
+/* --- Botões --- */
+.button {
+    -fx-background-color: #1f7fd6;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4px;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #3aa8ff;
+}
+
+/* Aplica quando o botão está com disableProperty() = true (ver MainApp:
+   editBtn/revealBtn/deleteBtn ficam desabilitados sem seleção na tabela). */
+.button:disabled {
+    -fx-opacity: 0.35;
+}
+
+/* Estilo "perigo" (vermelho) usado só no botão Excluir, por ser destrutivo. */
+.button-danger {
+    -fx-background-color: #dc2626;
+}
+
+.button-danger:hover {
+    -fx-background-color: #ef4444;
+}
+
+/* Estilo com contorno (sem preenchimento) usado no botão "Ver senha" e no
+   botão de mostrar/ocultar senha, pra diferenciar de uma ação "normal". */
+.button-eye {
+    -fx-background-color: transparent;
+    -fx-border-color: #3aa8ff;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-text-fill: #3aa8ff;
+}
+
+.button-eye:hover {
+    -fx-background-color: rgba(58, 168, 255, 0.15);
+}
+
+/* --- Checkboxes (Maiúsculas, Minúsculas, Números, Símbolos) --- */
+.check-box {
+    -fx-text-fill: #d7dce3;
+}
+
+/* ".box" é a "caixinha" quadrada do checkbox; ".mark" é o "check" (✓) que
+   aparece dentro dela quando marcado. */
+.check-box .box {
+    -fx-background-color: #131a2a;
+    -fx-border-color: #4a5b7a;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+}
+
+.check-box:hover .box {
+    -fx-border-color: #3aa8ff;
+}
+
+.check-box:selected .box {
+    -fx-background-color: #1f7fd6;
+    -fx-border-color: #3aa8ff;
+}
+
+.check-box .mark {
+    -fx-background-color: white;
+}
+
+/* --- Mensagens de status (embaixo dos botões do formulário) --- */
+/* Essas duas classes são alternadas via Java (MainApp.setStatus) dependendo
+   se a mensagem é uma confirmação de sucesso ou só uma informação neutra. */
+.status-success {
+    -fx-text-fill: #4ade80;
+    -fx-font-weight: bold;
+}
+
+.status-neutral {
+    -fx-text-fill: #8a94a6;
+}
+
+/* --- Barra de força da senha --- */
+/* A cor de preenchimento (-fx-accent) é definida dinamicamente pelo Java
+   (MainApp.updateStrengthIndicator), de acordo com o resultado calculado
+   pelo PasswordStrengthEvaluator. Aqui só definimos o formato/tamanho. */
+.progress-bar {
+    -fx-min-height: 8px;
+    -fx-max-height: 8px;
+}
+
+.progress-bar > .track {
+    -fx-background-color: #131a2a;
+    -fx-background-radius: 4px;
+    -fx-border-color: #24304a;
+    -fx-border-radius: 4px;
+}
+
+.progress-bar > .bar {
+    -fx-background-radius: 4px;
+    -fx-background-insets: 0;
+    -fx-padding: 4px;
+}
+
+/* --- Tabela de credenciais salvas --- */
+.table-view {
+    -fx-background-color: #0f1420;
+    -fx-control-inner-background: #0f1420;
+    -fx-table-cell-border-color: transparent;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #131a2a;
+}
+
+.table-view .column-header, .table-view .filler {
+    -fx-background-color: #131a2a;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #3aa8ff;
+    -fx-font-weight: bold;
+}
+
+/* Linhas pares/ímpares com cores levemente diferentes ("zebra striping"),
+   facilita acompanhar uma linha com o olho numa tabela grande. */
+.table-row-cell {
+    -fx-background-color: #0f1420;
+    -fx-text-fill: #d7dce3;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #121826;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #1f7fd6;
+}
+
+.table-view .table-cell {
+    -fx-text-fill: #d7dce3;
+}
+
+/* --- Janelas de diálogo (senha mestre, confirmações, erros) --- */
+/* Por padrão, Dialog/Alert do JavaFX abrem com um tema claro do sistema.
+   MainApp.applyTheme() aplica esse mesmo style.css em cada diálogo pra
+   manter a identidade visual escura em toda a aplicação. */
+.dialog-pane {
+    -fx-background-color: #131a2a;
+}
+
+.dialog-pane .header-panel {
+    -fx-background-color: #0f1420;
+}
+
+.dialog-pane .header-panel .label {
+    -fx-text-fill: #e8ecf1;
+}
+
+.dialog-pane .content.label {
+    -fx-text-fill: #d7dce3;
+}
