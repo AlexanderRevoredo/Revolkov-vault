@@ -4,10 +4,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- "Endereço" único do projeto no mundo Maven: groupId + artifactId + version.
+         É assim que outros projetos (ou o próprio jpackage) identificam este .jar. -->
     <groupId>org.example</groupId>
     <artifactId>password-manager</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+    <!-- "Variáveis" reutilizadas mais abaixo no arquivo (com ${nome}). Manter a
+         versão do JavaFX aqui, numa única linha, evita ter que trocar o número
+         em vários lugares se um dia quisermos atualizar. -->
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
@@ -15,6 +20,10 @@
         <javafx.version>21.0.2</javafx.version>
     </properties>
 
+    <!-- Bibliotecas externas de que o projeto depende. O Maven baixa esses
+         .jars automaticamente do Maven Central na primeira vez que builda.
+         Só precisamos declarar controls e fxml aqui porque eles já "puxam"
+         javafx-graphics e javafx-base sozinhos, como dependências transitivas. -->
     <dependencies>
         <dependency>
             <groupId>org.openjfx</groupId>
@@ -28,6 +37,10 @@
         </dependency>
     </dependencies>
 
+    <!-- Plugins alteram o comportamento do Maven durante o build. O
+         javafx-maven-plugin adiciona o comando "mvn javafx:run", que sabe
+         como rodar um app JavaFX corretamente (coisa que "mvn exec:java"
+         sozinho não faria bem, por causa de como o JavaFX se inicializa). -->
     <build>
         <plugins>
             <plugin>
@@ -35,6 +48,10 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
+                    <!-- Classe usada só pelo "mvn javafx:run" durante o
+                         desenvolvimento. Para o .exe empacotado (jpackage),
+                         usamos org.example.Launcher em vez desta — ver o
+                         comentário em Launcher.java para entender o motivo. -->
                     <mainClass>org.example.MainApp</mainClass>
                 </configuration>
             </plugin>

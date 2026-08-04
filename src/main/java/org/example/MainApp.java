@@ -137,7 +137,7 @@ public class MainApp extends Application {
 
         // Scene é o "conteúdo" da janela (tamanho inicial 700x620) e é nela que
         // aplicamos a folha de estilos (o tema escuro/azul do app.css).
-        Scene scene = new Scene(root, 700, 620);
+        Scene scene = new Scene(root, 780, 620);
         scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
         // Sempre que a largura da janela mudar (usuário redimensiona/maximiza),
         // recalculamos o tamanho da fonte do título para ele ficar responsivo.
@@ -457,8 +457,8 @@ public class MainApp extends Application {
         TableColumn<PasswordEntry, String> passwordCol = new TableColumn<>("Senha");
         passwordCol.setCellValueFactory(data ->
                 new ReadOnlyStringWrapper(revealedEntries.contains(data.getValue()) ? data.getValue().getPassword() : MASKED_PASSWORD));
-        passwordCol.setPrefWidth(250);
-        passwordCol.setMinWidth(150);
+        passwordCol.setPrefWidth(340);
+        passwordCol.setMinWidth(220);
 
         table.getColumns().addAll(List.of(serviceCol, accountCol, passwordCol));
         // CONSTRAINED_RESIZE_POLICY faz as colunas dividirem toda a largura
