@@ -34,6 +34,7 @@ import org.example.service.MasterPasswordService;
 import org.example.service.PasswordGenerator;
 import org.example.service.PasswordStorage;
 import org.example.service.PasswordStrengthEvaluator;
+import org.example.service.VaultCrypto;
 
 import java.io.InputStream;
 import java.util.Collections;
@@ -65,8 +66,10 @@ public class MainApp extends Application {
     // objetos e mostra o resultado na interface — ela não sabe COMO cada coisa
     // é feita (gerar senha, salvar em arquivo, etc.), só QUEM faz.
     private final PasswordGenerator generator = new PasswordGenerator();
-    private final PasswordStorage storage = new PasswordStorage();
     private final MasterPasswordService masterPasswordService = new MasterPasswordService();
+    // Só existe depois que o usuário digita a senha mestre: sem a chave
+    // derivada dela, não há como ler nem gravar o cofre criptografado.
+    private PasswordStorage storage;
     private final PasswordStrengthEvaluator strengthEvaluator = new PasswordStrengthEvaluator();
 
     // Lista "observável": é como um ArrayList normal, mas a TableView consegue
@@ -117,15 +120,16 @@ public class MainApp extends Application {
      */
     @Override
     public void start(Stage stage) {
-        // Antes de mostrar qualquer coisa, garante que existe uma senha mestre
-        // cadastrada. Se o usuário fechar essa etapa sem cadastrar, encerramos
-        // o app (não faz sentido abrir a tela principal sem essa proteção).
-        if (!ensureMasterPassword()) {
+        // Antes de mostrar qualquer coisa, o cofre precisa ser criado (na
+        // primeira execução) ou desbloqueado com a senha mestre. Se o usuário
+        // fechar essa etapa, encerramos o app: sem a chave derivada da senha,
+        // não há como descriptografar nada para exibir.
+        if (!setUpVault()) {
             Platform.exit();
             return;
         }
 
-        // Carrega as credenciais salvas no arquivo .txt para dentro da lista em memória.
+        // Descriptografa o cofre e carrega as credenciais para a lista em memória.
         entries.addAll(storage.loadAll());
 
         // BorderPane divide a janela em regiões: topo, centro, esquerda, direita, baixo.
@@ -712,16 +716,62 @@ public class MainApp extends Application {
     }
 
     /**
-     * Roda uma única vez, na primeira execução do app: se ainda não existe
-     * uma senha mestre cadastrada, mostra uma janela pedindo pra criar uma
-     * (com confirmação) e salva o hash dela via MasterPasswordService.
-     * Devolve false se o usuário fechar a janela sem cadastrar nada.
+     * Prepara o cofre antes da tela principal aparecer. Existem três caminhos:
+     *
+     * 1. PRIMEIRA EXECUÇÃO (não há senha mestre cadastrada):
+     *    pede para criar uma senha mestre e cria um cofre criptografado vazio.
+     *
+     * 2. ATUALIZAÇÃO DA VERSÃO ANTIGA (existe senha mestre, mas ainda não
+     *    existe cofre criptografado): pede a senha e converte o antigo
+     *    passwords.txt em texto puro para o novo formato criptografado.
+     *
+     * 3. USO NORMAL (cofre criptografado já existe): pede a senha mestre e
+     *    desbloqueia o cofre.
+     *
+     * Devolve false se o usuário fechar/cancelar a janela — nesse caso o app
+     * simplesmente não abre.
      */
-    private boolean ensureMasterPassword() {
-        if (masterPasswordService.isRegistered()) {
-            return true; // já existe senha mestre, não precisa fazer nada
+    private boolean setUpVault() {
+        if (!masterPasswordService.isRegistered()) {
+            String newPassword = askNewMasterPassword();
+            if (newPassword == null) {
+                return false;
+            }
+            masterPasswordService.register(newPassword);
+            storage = PasswordStorage.createNew(newPassword.toCharArray());
+            return true;
         }
 
+        String password = askMasterPasswordToUnlock();
+        if (password == null) {
+            return false;
+        }
+
+        if (!PasswordStorage.vaultExists()) {
+            // Caminho 2: primeira abertura depois de atualizar o app. O
+            // createNew() cuida de importar as credenciais antigas e apagar
+            // o arquivo em texto puro.
+            storage = PasswordStorage.createNew(password.toCharArray());
+            return true;
+        }
+
+        try {
+            storage = PasswordStorage.unlock(password.toCharArray());
+            return true;
+        } catch (VaultCrypto.WrongPasswordException e) {
+            // A senha já foi conferida contra o hash antes de chegar aqui, então
+            // isso indica que o arquivo do cofre foi alterado ou corrompido.
+            showError(e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Janela da primeira execução: pede para o usuário criar uma senha mestre
+     * (digitada duas vezes, para evitar erro de digitação). Devolve a senha
+     * escolhida, ou null se o usuário fechar a janela sem cadastrar.
+     */
+    private String askNewMasterPassword() {
         // Dialog<String> é uma janela modal (trava o resto do app até fechar)
         // que devolve um valor do tipo String quando o usuário confirma.
         Dialog<String> dialog = new Dialog<>();
@@ -764,16 +814,54 @@ public class MainApp extends Application {
         // janela fechar, dependendo de qual botão foi clicado.
         dialog.setResultConverter(bt -> bt == okType ? pass1.getText() : null);
         Optional<String> result = dialog.showAndWait(); // bloqueia até o usuário fechar a janela
-        if (result.isEmpty()) {
-            return false;
-        }
-        masterPasswordService.register(result.get());
-        return true;
+        return result.orElse(null);
+    }
+
+    /**
+     * Janela mostrada toda vez que o app abre (a partir da segunda execução):
+     * pede a senha mestre para desbloquear o cofre. Devolve a senha digitada,
+     * ou null se o usuário cancelar.
+     *
+     * A senha é conferida contra o hash salvo (MasterPasswordService) antes de
+     * a janela fechar, então quem sai daqui com uma senha em mãos tem certeza
+     * de que ela é a correta.
+     */
+    private String askMasterPasswordToUnlock() {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle(APP_NAME);
+        dialog.setHeaderText("Digite a senha mestre para abrir o cofre.");
+        applyTheme(dialog.getDialogPane());
+
+        PasswordField field = new PasswordField();
+        field.setPromptText("Senha mestre");
+        Label error = new Label();
+        error.getStyleClass().add("error-label");
+        VBox content = new VBox(10, field, error);
+        dialog.getDialogPane().setContent(content);
+
+        ButtonType okType = new ButtonType("Abrir", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelType = new ButtonType("Cancelar", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(okType, cancelType);
+
+        Node okButton = dialog.getDialogPane().lookupButton(okType);
+        okButton.addEventFilter(ActionEvent.ACTION, event -> {
+            if (!masterPasswordService.verify(field.getText())) {
+                error.setText("Senha mestre incorreta.");
+                event.consume(); // cancela o clique: a janela continua aberta
+            }
+        });
+
+        Optional<ButtonType> result = dialog.showAndWait();
+        return (result.isPresent() && result.get() == okType) ? field.getText() : null;
     }
 
     /**
      * Mostra a janela "digite a senha mestre" usada antes de revelar uma senha.
      * Devolve true só se a senha digitada bater com a cadastrada.
+     *
+     * Sim, isso é redundante com o desbloqueio da abertura — e é de propósito:
+     * protege o caso de o app ficar aberto e sem supervisão, para que ninguém
+     * consiga ver as senhas apenas clicando em "Ver senha".
      */
     private boolean askMasterPassword() {
         Dialog<ButtonType> dialog = new Dialog<>();
@@ -792,7 +880,7 @@ public class MainApp extends Application {
         ButtonType cancelType = new ButtonType("Cancelar", ButtonBar.ButtonData.CANCEL_CLOSE);
         dialog.getDialogPane().getButtonTypes().addAll(okType, cancelType);
 
-        // Mesmo truque do ensureMasterPassword(): se a senha estiver errada,
+        // Mesmo truque do askNewMasterPassword(): se a senha estiver errada,
         // consumimos o evento e a janela continua aberta mostrando o erro.
         Node okButton = dialog.getDialogPane().lookupButton(okType);
         okButton.addEventFilter(ActionEvent.ACTION, event -> {

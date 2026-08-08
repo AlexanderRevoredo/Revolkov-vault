@@ -38,7 +38,7 @@ O objetivo principal é aplicar e demonstrar conhecimentos de:
 > [!IMPORTANT]
 > Esta versão foi desenvolvida para fins educacionais e de portfólio.
 >
-> As credenciais ainda são armazenadas em texto puro no arquivo local. Portanto, o aplicativo não deve ser utilizado para guardar senhas reais ou informações sensíveis.
+> As credenciais são criptografadas com AES-256-GCM, usando uma chave derivada da senha mestre. **Não existe recuperação de senha mestre**: se você esquecê-la, o cofre não poderá ser aberto e as credenciais serão perdidas.
 
 ---
 
@@ -144,7 +144,23 @@ Cadastra e valida a senha mestre utilizando PBKDF2 com salt aleatório.
 
 ---
 
-## Como executar
+## Download (Windows)
+
+Para usar o aplicativo, **não é necessário instalar Java nem qualquer outra ferramenta** — o instalador já inclui tudo.
+
+1. Acesse a página de [**Releases**](https://github.com/AlexanderRevoredo/Revolkov-vault/releases).
+2. Baixe o arquivo `REVOLKOV VAULT-<versão>.exe`.
+3. Execute o instalador e siga o assistente.
+4. Abra o aplicativo pelo atalho criado no menu Iniciar ou na área de trabalho.
+
+Na primeira execução, será solicitada a criação de uma **senha mestre**. Ela protege todo o cofre e será pedida sempre que o aplicativo for aberto.
+
+> [!CAUTION]
+> Guarde a senha mestre em local seguro. Não existe recuperação: sem ela, as credenciais salvas não poderão ser recuperadas por ninguém.
+
+---
+
+## Como executar (desenvolvimento)
 
 ### Pré-requisitos
 
@@ -198,51 +214,61 @@ Armazena:
 
 A senha mestre original não é armazenada.
 
-### `passwords.txt`
+### `vault.dat`
 
-Armazena:
+Arquivo binário criptografado que armazena todas as credenciais (serviço, conta, senha e preferências de geração).
 
-- serviço;
-- conta;
-- senha;
-- preferências de geração;
-- tamanho configurado.
+Estrutura:
+
+```text
+[ salt: 16 bytes ][ IV: 12 bytes ][ dados criptografados + tag de autenticação ]
+```
+
+O conteúdo só pode ser lido com a chave derivada da senha mestre. Versões anteriores gravavam um `passwords.txt` em texto puro; ao abrir o app pela primeira vez após a atualização, esse arquivo é convertido automaticamente para o formato criptografado e removido.
 
 ---
 
 ## Segurança implementada
 
-A senha mestre não é salva em texto puro.
+A senha mestre não é salva em texto puro, e as credenciais não ficam legíveis em disco.
 
-A implementação utiliza:
+**Autenticação da senha mestre:**
 
 - `PBKDF2WithHmacSHA256`;
 - salt aleatório de 16 bytes;
 - 65.536 iterações;
 - chave derivada de 256 bits;
-- comparação com `MessageDigest.isEqual`;
-- `SecureRandom` para geração de senhas e salts.
+- comparação com `MessageDigest.isEqual`.
 
-### Limitação atual
+**Criptografia do cofre:**
+
+- `AES-256/GCM/NoPadding` (criptografia autenticada);
+- chave derivada da senha mestre via PBKDF2, com salt próprio;
+- IV de 12 bytes gerado a cada gravação;
+- tag de autenticação de 128 bits, que detecta senha incorreta e adulteração do arquivo;
+- `SecureRandom` para geração de senhas, salts e IVs.
+
+O cofre é descriptografado apenas na memória, após o desbloqueio na abertura do aplicativo.
+
+### Limitações conhecidas
 
 > [!WARNING]
-> A senha mestre protege a visualização das credenciais dentro da interface, mas ainda não protege diretamente o arquivo `passwords.txt`.
->
-> As credenciais são armazenadas em texto puro no disco e podem ser lidas por alguém que tenha acesso ao arquivo.
->
-> A implementação de criptografia autenticada do cofre está planejada para uma próxima versão.
+> - Não há recuperação de senha mestre. Esquecer a senha significa perder o acesso às credenciais.
+> - Enquanto o aplicativo está aberto, as credenciais ficam descriptografadas na memória do processo.
+> - O aplicativo não possui bloqueio automático por inatividade.
 
 ---
 
 ## Roadmap
 
-- [ ] Criptografar o arquivo de credenciais com AES-GCM.
-- [ ] Derivar a chave de criptografia a partir da senha mestre.
+- [x] Criptografar o arquivo de credenciais com AES-GCM.
+- [x] Derivar a chave de criptografia a partir da senha mestre.
+- [x] Criar instalador para Windows.
 - [ ] Limpar automaticamente a senha da área de transferência.
+- [ ] Bloqueio automático por inatividade.
 - [ ] Adicionar testes unitários para geração e avaliação de força.
 - [ ] Adicionar testes para persistência e validação da senha mestre.
 - [ ] Melhorar o tratamento de arquivos ausentes ou corrompidos.
-- [ ] Criar instalador para Windows.
 - [ ] Publicar versões executáveis na seção Releases.
 - [ ] Adicionar demonstração em GIF ou vídeo.
 - [ ] Adicionar captura atualizada da interface ao README.

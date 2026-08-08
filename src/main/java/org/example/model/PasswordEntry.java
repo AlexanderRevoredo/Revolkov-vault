@@ -1,5 +1,8 @@
 package org.example.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Representa UMA credencial salva (uma linha da tabela): o serviço
  * (Netflix, Google...), a conta/e-mail, a senha, e quais opções de geração
@@ -71,15 +74,21 @@ public class PasswordEntry {
     }
 
     /**
-     * Converte essa credencial em UMA linha de texto, pronta para salvar no
-     * arquivo passwords.txt. Os campos ficam separados por "|", na ordem:
+     * Converte essa credencial em UMA linha de texto, pronta para gravar no
+     * cofre. Os campos ficam separados por "|", na ordem:
      * serviço|conta|senha|maiúsculas|minúsculas|números|símbolos|tamanho
+     *
+     * Só que existe um problema clássico aqui: e se a própria SENHA contiver
+     * um "|"? A linha ficaria com campos demais e a leitura quebraria. Para
+     * resolver isso usamos ESCAPE (ver o método escape() abaixo): antes de
+     * montar a linha, todo "|" que faz parte do conteúdo é marcado com uma
+     * barra invertida na frente, para não ser confundido com o separador.
      */
     public String toLine() {
         return String.join("|",
-                service,
-                account,
-                password,
+                escape(service),
+                escape(account),
+                escape(password),
                 String.valueOf(useUpper),
                 String.valueOf(useLower),
                 String.valueOf(useNumbers),
@@ -88,22 +97,78 @@ public class PasswordEntry {
     }
 
     /**
-     * Faz o caminho inverso de toLine(): recebe uma linha do arquivo .txt e
+     * Faz o caminho inverso de toLine(): recebe uma linha do arquivo e
      * reconstrói o objeto PasswordEntry a partir dela.
-     * O "-1" no split faz o Java manter campos vazios no final da linha
-     * (sem isso, "a|b|" viraria só ["a","b"] em vez de ["a","b",""]).
      */
     public static PasswordEntry fromLine(String line) {
-        String[] parts = line.split("\\|", -1);
+        List<String> parts = splitEscaped(line);
+        if (parts.size() < 8) {
+            throw new IllegalArgumentException("Linha do cofre em formato inválido: " + parts.size() + " campos");
+        }
         return new PasswordEntry(
-                parts[0],
-                parts[1],
-                parts[2],
-                Boolean.parseBoolean(parts[3]),
-                Boolean.parseBoolean(parts[4]),
-                Boolean.parseBoolean(parts[5]),
-                Boolean.parseBoolean(parts[6]),
-                Integer.parseInt(parts[7]));
+                parts.get(0),
+                parts.get(1),
+                parts.get(2),
+                Boolean.parseBoolean(parts.get(3)),
+                Boolean.parseBoolean(parts.get(4)),
+                Boolean.parseBoolean(parts.get(5)),
+                Boolean.parseBoolean(parts.get(6)),
+                Integer.parseInt(parts.get(7)));
+    }
+
+    /**
+     * "Protege" os caracteres que teriam significado especial no arquivo:
+     *
+     *   \  vira  \\   (a própria barra precisa ser protegida primeiro,
+     *                  senão bagunçaria as substituições seguintes)
+     *   |  vira  \|   (para não ser lido como separador de campos)
+     *   quebra de linha vira \n  (para a credencial não virar duas linhas)
+     */
+    private static String escape(String value) {
+        return value
+                .replace("\\", "\\\\")
+                .replace("|", "\\|")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r");
+    }
+
+    /**
+     * Separa a linha nos "|" que são REALMENTE separadores, ignorando os que
+     * foram protegidos por escape(), e já desfaz a proteção de cada caractere.
+     *
+     * Não dá para usar split() aqui porque ele não entende escape — por isso
+     * percorremos a linha caractere por caractere:
+     *
+     * - se o caractere anterior foi uma barra invertida, este caractere é
+     *   conteúdo literal (ou um código como "n" = quebra de linha);
+     * - se for uma barra invertida, ligamos a "flag" de escape e seguimos;
+     * - se for um "|" solto, terminamos o campo atual e começamos o próximo;
+     * - qualquer outro caractere é acrescentado ao campo atual.
+     */
+    private static List<String> splitEscaped(String line) {
+        List<String> parts = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        boolean escaping = false;
+
+        for (char c : line.toCharArray()) {
+            if (escaping) {
+                switch (c) {
+                    case 'n' -> current.append('\n');
+                    case 'r' -> current.append('\r');
+                    default -> current.append(c); // cobre \\ e \|
+                }
+                escaping = false;
+            } else if (c == '\\') {
+                escaping = true;
+            } else if (c == '|') {
+                parts.add(current.toString());
+                current.setLength(0);
+            } else {
+                current.append(c);
+            }
+        }
+        parts.add(current.toString()); // o último campo não é seguido de "|"
+        return parts;
     }
 
     @Override
